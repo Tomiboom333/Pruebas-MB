@@ -130,10 +130,10 @@ int main(void)
   {
     /* Button detection: PA0 press triggers Modbus read without reset */
     static uint8_t last_btn = 0;
-    uint8_t btn = (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET) ? 1 : 0;
+    uint8_t btn = (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_10) == GPIO_PIN_SET) ? 1 : 0;
     if (btn && !last_btn) {
       HAL_Delay(20); /* debounce */
-      if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET) {
+      if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_10) == GPIO_PIN_SET) {
         readHoldingRegisters(0x0001, 3, 2);
       }
     }
@@ -144,6 +144,11 @@ int main(void)
     {
       if (hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED)
       {
+        if (usb_buffer_len < sizeof(usb_buffer))
+        {
+          usb_buffer[usb_buffer_len++] = '\n';
+        }
+
         uint8_t res = CDC_Transmit_FS(usb_buffer, usb_buffer_len);
         if (res == USBD_OK)
         {
@@ -261,9 +266,10 @@ static void MX_GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
@@ -291,6 +297,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(TX_EN_GPIO_Port, &GPIO_InitStruct);
 
+  GPIO_InitStruct.Pin = GPIO_PIN_10;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
   /* USER CODE END MX_GPIO_Init_2 */
