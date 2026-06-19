@@ -44,7 +44,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
       usb_data_ready = 1;
 
       /* Restart UART reception */
-      HAL_UART_Receive_IT(&huart1, RxData, 9);
+      HAL_UART_Receive_IT(&huart1, RxData, usb_buffer_len);
     }
 }
 
@@ -80,8 +80,7 @@ void readCoils(uint16_t slAddress, uint16_t pos, uint16_t numCoils)
   TxData[7] = (uint8_t)((crc>>8)&0xFF);  // CRC HIGH
 
   sendData(TxData, 8);
-
-  HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 5+(numCoils+7)/8);
+  HAL_UART_Receive_IT(&huart1, RxData, 5+(numCoils+7)/8);
 }
 
 void writeSingleCoil(uint16_t slAddress, uint16_t pos, uint16_t value)
@@ -142,7 +141,7 @@ void readInputContacts(uint16_t slAddress, uint16_t pos, uint16_t numContacts)
   TxData[7] = (uint8_t)((crc>>8)&0xFF);  // CRC HIGH
 
   sendData(TxData, 8);
-  HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 5+(numContacts+7)/8);
+  HAL_UART_Receive_IT(&huart1, RxData, 5+(numContacts+7)/8);
 }
 
 void readHoldingRegisters(uint16_t slAddress, uint16_t pos, uint16_t numRegisters)
@@ -227,5 +226,5 @@ void readAnalogInputs(uint16_t slAddress, uint16_t pos, uint16_t numRegisters)
   TxData[7] = (uint8_t)((crc>>8)&0xFF);  // CRC HIGH
 
   sendData(TxData, 8);
-  HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 5 + numRegisters * 2);
+  HAL_UART_Receive_IT(&huart1, RxData, 5 + numRegisters * 2);
 }
