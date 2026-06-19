@@ -35,27 +35,17 @@ UART_HandleTypeDef huart1;
 //void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    // size_t pos = 0;
     if (huart->Instance == USART1) {
-      // snprintf((char *)bufCompleto, sizeof(bufCompleto), "%s", RxData);
-      // //uart_rx_flag = 1;
-      memcpy(Data, RxData, 256);
-      //Data[4,5]: Informacion para un holding register que manda dos bytes.
-      //if(Data[4] != 0) 
+      /* Copy only the expected number of bytes (9 in your current setup)
+         and mark data ready for USB transmission from main loop. */
+      usb_buffer_len = 9;
+      if (usb_buffer_len > sizeof(usb_buffer)) usb_buffer_len = sizeof(usb_buffer);
+      memcpy(usb_buffer, RxData, usb_buffer_len);
+      usb_data_ready = 1;
+
+      /* Restart UART reception */
       HAL_UART_Receive_IT(&huart1, RxData, 9);
-  //    pos = snprintf(bufCompleto, sizeof(bufCompleto), "Datos recibidos: ");
     }
-    // for (uint16_t i = 0; i < Size && pos + 3 < sizeof(bufCompleto); ++i) {
-    //     int n = snprintf(bufCompleto + pos, sizeof(bufCompleto) - pos, "%02x", RxData[i]);
-    //     if (n < 0) break;
-    //     pos += (size_t)n;
-    // }
-
-    // if (pos + 2 < sizeof(bufCompleto)) {
-    //     snprintf(bufCompleto + pos, sizeof(bufCompleto) - pos, "\r\n");
-    // }
-
-    // CDC_Transmit_FS((uint8_t*)bufCompleto, strlen(bufCompleto));
 }
 
 

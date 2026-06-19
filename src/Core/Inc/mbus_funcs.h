@@ -8,6 +8,10 @@ volatile uint8_t uart_rx_flag;
 
 uint8_t Data[256];
 
+volatile uint8_t usb_data_ready;
+uint8_t usb_buffer[128];
+uint16_t usb_buffer_len;
+
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size);
 
 void sendData (uint8_t *data, uint16_t size);

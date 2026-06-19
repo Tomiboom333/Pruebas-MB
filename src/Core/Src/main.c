@@ -20,6 +20,7 @@
 #include "main.h"
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
+#include "usbd_core.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "modbus_crc.h"
@@ -57,6 +58,7 @@ UART_HandleTypeDef huart1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
+extern USBD_HandleTypeDef hUsbDeviceFS;
 
 
 /* USER CODE END 0 */
@@ -126,17 +128,40 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//const uint8_t* buf = "prueba cdc \n\0";
-//
-//CDC_Transmit_FS(buf, strlen(buf));
-// if(uart_rx_flag){
-//   uint16_t nbuf = strlen((char *)bufCompleto);
-//   if(nbuf) {
-//     sendData(bufCompleto, nbuf);
-//   }
-//   uart_rx_flag = 0;
-HAL_Delay(10);
-  // readHoldingRegisters(0x0001, 3, 2); // Example: Read registers at positions 6 and 7 of slave with address 1
+    /* Button detection: PA0 press triggers Modbus read without reset */
+    static uint8_t last_btn = 0;
+    uint8_t btn = (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET) ? 1 : 0;
+    if (btn && !last_btn) {
+      HAL_Delay(20); /* debounce */
+      if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET) {
+        readHoldingRegisters(0x0001, 3, 2);
+      }
+    }
+    last_btn = btn;
+
+    /* If UART callback marked data ready, try sending over USB when configured. */
+    if (usb_data_ready)
+    {
+      if (hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED)
+      {
+        uint8_t res = CDC_Transmit_FS(usb_buffer, usb_buffer_len);
+        if (res == USBD_OK)
+        {
+          usb_data_ready = 0; // sent
+        }
+        else if (res == USBD_BUSY)
+        {
+          /* Host busy — keep flag set and retry next loop */
+        }
+        else
+        {
+          /* On error, drop the data to avoid lock — you can implement retries */
+          usb_data_ready = 0;
+        }
+      }
+    }
+
+    HAL_Delay(10);
   }
 
     /* USER CODE END WHILE */
@@ -245,6 +270,12 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(TX_EN_GPIO_Port, TX_EN_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PA0 (button input) */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
