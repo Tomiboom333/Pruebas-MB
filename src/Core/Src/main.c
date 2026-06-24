@@ -19,10 +19,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "usb_device.h"
-#include "usbd_cdc_if.h"
-#include "usbd_core.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "usbd_core.h"
+#include "usbd_cdc_if.h"
 #include "modbus_crc.h"
 #include "mbus_funcs.h"
 /* USER CODE END Includes */
